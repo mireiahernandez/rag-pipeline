@@ -8,18 +8,15 @@ from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 from src.database_handlers.database_handler import MongoDBHandler
 from src.parsers.parser import PDFParser
+import motor.motor_asyncio
 
-
+# connect to MongoDB with lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    mongo_uri = os.getenv("MONGO_URI")
-    app.mongodb_client = MongoClient(mongo_uri)
-
+    app.mongodb_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
     yield
-
-    # Shutdown
     app.mongodb_client.close()
+
 
 app = FastAPI(lifespan=lifespan)
 @app.get("/")
@@ -34,8 +31,9 @@ async def upload_pdf(file: UploadFile):
         mongodb_handler = MongoDBHandler(app.mongodb_client, "pdfCollection", "pdfs")
         pdf_parser = PDFParser()
         # text = await pdf_parser.extract_text(file)
-        # mongodb_handler.upload_document(text=text, metadata={})
-        return JSONResponse(content={"message": "PDF uploaded successfully"}, status_code=200)
+        text = "test"
+        mongodb_handler.upload_document(text=text, metadata={})
+        return JSONResponse(content={"message": f"PDF uploaded successfully"}, status_code=200)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")

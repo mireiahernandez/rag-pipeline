@@ -18,7 +18,7 @@ async def test_upload_file_real():
         files = {
             "file": ("hr_policy.pdf", file, "application/pdf")
         }
-        response = requests.post("http://0.0.0.0:8000/uploadPDF/", files=files)
+        response = requests.post("http://0.0.0.0:8000/upload/", files=files)
     print(response.json())
     assert response.status_code == 200
 
@@ -27,6 +27,6 @@ async def test_upload_file_dummy():
     files = {
         "file": ("test.pdf", BytesIO(b"fake PDF content"), "application/pdf")
     }
-    response = requests.post("http://0.0.0.0:8000/uploadPDF/", files=files)
+    response = requests.post("http://0.0.0.0:8000/upload/", files=files)
     print(response.json())
     assert response.status_code == 200

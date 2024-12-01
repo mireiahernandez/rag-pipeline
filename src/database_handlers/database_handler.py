@@ -29,3 +29,6 @@ class MongoDBHandler(BaseDatabaseHandler):
 
     def delete_document(self, document_id: str):
         self.collection.delete_one({"_id": document_id})
+
+    async def get_number_of_documents(self):
+        return await self.collection.count_documents({})

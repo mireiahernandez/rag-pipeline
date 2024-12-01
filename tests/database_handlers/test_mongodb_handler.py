@@ -8,8 +8,11 @@ load_dotenv()
 
 def test_mongodb_handler_upload_document():
     client = MongoClient(os.getenv("MONGODB_URI"))
+
     # create test collection
     mongodb_handler = MongoDBHandler(client, "testCollection", "pdfs")
+    mongodb_handler.collection.delete_many({})
+
     # insert a document
     mongodb_handler.upload_document(text="test", metadata={"test": "test"})
     # assert that the document was uploaded
