@@ -1,2 +1,8 @@
 fastapi
 uvicorn
+python-multipart
+pymongo
+motor
+python-dotenv
+pdfminer.six
+PyPDF2

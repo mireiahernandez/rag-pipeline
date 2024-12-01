@@ -5,3 +5,14 @@ services:
     build: .
     ports:
       - "8000:8000"  # Maps port 5000 on the host to port 5000 in the container
+  
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:

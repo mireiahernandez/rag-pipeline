@@ -14,4 +14,4 @@ install:
 # run tests
 test:
 	$(MAKE) install
-	pytest -v tests/*
+	python -m pytest -v tests/*
