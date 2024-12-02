@@ -30,3 +30,4 @@ async def test_upload_file_dummy():
     response = requests.post("http://0.0.0.0:8000/upload/", files=files)
     print(response.json())
     assert response.status_code == 200
+

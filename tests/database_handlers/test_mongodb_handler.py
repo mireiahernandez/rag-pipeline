@@ -1,37 +1,46 @@
 from src.database_handlers.database_handler import MongoDBHandler
 from pymongo import MongoClient
-import os
+import motor.motor_asyncio
 import uuid
-from dotenv import load_dotenv
+import os
+import pytest
 
-load_dotenv()
 
-def test_mongodb_handler_upload_document():
-    client = MongoClient(os.getenv("MONGODB_URI"))
+@pytest.mark.asyncio
+async def test_mongodb_handler_upload_document():
+    # use async client
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
 
     # create test collection
     mongodb_handler = MongoDBHandler(client, "testCollection", "pdfs")
     mongodb_handler.collection.delete_many({})
 
     # insert a document
-    mongodb_handler.upload_document(text="test", metadata={"test": "test"})
+    inserted_id = await mongodb_handler.upload_document(text="test", metadata={"test": "test"})
+    print(inserted_id)
     # assert that the document was uploaded
-    assert mongodb_handler.collection.count_documents({}) == 1
+    number_of_documents = await mongodb_handler.get_number_of_documents()
+    assert number_of_documents == 1
     # empty the collection
-    mongodb_handler.collection.delete_many({})
+    await mongodb_handler.collection.delete_many({})
+    # assert that the document was deleted
+    number_of_documents = await mongodb_handler.get_number_of_documents()
+    assert number_of_documents == 0
     # disconnect from client
     client.close()
 
 
-def test_mongodb_handler_delete_document():
-    client = MongoClient(os.getenv("MONGODB_URI"))
+@pytest.mark.asyncio
+async def test_mongodb_handler_delete_document():
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
     # insert a document
     mongodb_handler = MongoDBHandler(client, "testCollection", "pdfs")
-    document_id = str(uuid.uuid4())
-    mongodb_handler.upload_document(text="test", metadata={"test": "test"}, document_id=document_id)
-    # create test collection
-    mongodb_handler.delete_document(document_id)
+    inserted_id = await mongodb_handler.upload_document(
+        text="test", metadata={"test": "test"})
+    number_of_documents = await mongodb_handler.get_number_of_documents()
+    assert number_of_documents == 1
+    await mongodb_handler.delete_document(inserted_id)
     # assert that the document was deleted
-    assert mongodb_handler.collection.count_documents({}) == 0
-    # disconnect from client
+    number_of_documents = await mongodb_handler.get_number_of_documents()
+    assert number_of_documents == 0
     client.close()

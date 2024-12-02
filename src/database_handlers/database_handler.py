@@ -19,16 +19,17 @@ class MongoDBHandler(BaseDatabaseHandler):
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
 
-    def upload_document(self, metadata: dict, text: str, document_id: str = None):
+    async def upload_document(self, metadata: dict, text: str, document_id: str = None):
         document = {
             "metadata": metadata,
             "text": text,
             "_id": document_id if document_id else str(uuid.uuid4())
         }
-        self.collection.insert_one(document)
+        created_document = await self.collection.insert_one(document)
+        return created_document.inserted_id
 
-    def delete_document(self, document_id: str):
-        self.collection.delete_one({"_id": document_id})
+    async def delete_document(self, document_id: str):
+        await self.collection.delete_one({"_id": document_id})
 
     async def get_number_of_documents(self):
         return await self.collection.count_documents({})
