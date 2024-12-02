@@ -3,11 +3,13 @@ import requests
 import pytest
 from io import BytesIO
 
+
 @pytest.mark.asyncio
 async def test_service_up():
     response = requests.get("http://0.0.0.0:8000/")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello World"}
+
 
 @pytest.mark.asyncio
 async def test_upload_file_real():
@@ -22,6 +24,7 @@ async def test_upload_file_real():
     print(response.json())
     assert response.status_code == 200
 
+
 @pytest.mark.asyncio
 async def test_upload_file_dummy():
     files = {
@@ -30,4 +33,3 @@ async def test_upload_file_dummy():
     response = requests.post("http://0.0.0.0:8000/upload/", files=files)
     print(response.json())
     assert response.status_code == 200
-

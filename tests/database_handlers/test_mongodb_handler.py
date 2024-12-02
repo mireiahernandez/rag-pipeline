@@ -1,7 +1,5 @@
 from src.database_handlers.database_handler import MongoDBHandler
-from pymongo import MongoClient
 import motor.motor_asyncio
-import uuid
 import os
 import pytest
 
@@ -16,7 +14,8 @@ async def test_mongodb_handler_upload_document():
     mongodb_handler.collection.delete_many({})
 
     # insert a document
-    inserted_id = await mongodb_handler.upload_document(text="test", metadata={"test": "test"})
+    inserted_id = await mongodb_handler.upload_document(
+        text="test", metadata={"test": "test"})
     print(inserted_id)
     # assert that the document was uploaded
     number_of_documents = await mongodb_handler.get_number_of_documents()

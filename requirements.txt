@@ -6,3 +6,6 @@ motor
 python-dotenv
 pdfminer.six
 PyPDF2
+PyMuPDF
+flake8
+mypy
