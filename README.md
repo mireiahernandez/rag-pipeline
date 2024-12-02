@@ -16,4 +16,4 @@
 
 ## Running tests
 1. Run `make install` to install the dependencies in the local environment
-2. Run `make test` to run the tests
+2. Run `make test` to run the tests (`make test` also runs `make install`)
