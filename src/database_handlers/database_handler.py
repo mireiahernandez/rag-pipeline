@@ -3,19 +3,28 @@ from abc import ABC, abstractmethod
 import uuid
 from typing import Optional
 import motor.motor_asyncio
+from typeguard import typechecked  # type: ignore
+from pymongo.results import InsertOneResult
 
 
 class BaseDatabaseHandler(ABC):
     @abstractmethod
-    def upload_document(self, metadata: dict, text: str):
+    async def upload_document(
+        self,
+        metadata: dict,
+        text: str,
+        document_id: Optional[str] = None
+    ) -> str:
         pass
 
     @abstractmethod
-    def delete_document(self, document_id: str):
+    async def delete_document(self, document_id: str) -> None:
         pass
 
 
+@typechecked
 class MongoDBHandler(BaseDatabaseHandler):
+    @typechecked
     def __init__(
         self,
         client: motor.motor_asyncio.AsyncIOMotorClient,
@@ -26,6 +35,7 @@ class MongoDBHandler(BaseDatabaseHandler):
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
 
+    @typechecked
     async def upload_document(
         self,
         metadata: dict,
@@ -40,10 +50,12 @@ class MongoDBHandler(BaseDatabaseHandler):
             "text": text,
             "_id": document_id if document_id else str(uuid.uuid4())
         }
-        created_document = await self.collection.insert_one(
+        created_document: InsertOneResult = await self.collection.insert_one(
             document)
-        return created_document.inserted_id
+        inserted_id: str = created_document.inserted_id
+        return inserted_id
 
+    @typechecked
     async def delete_document(
         self,
         document_id: str
@@ -53,6 +65,7 @@ class MongoDBHandler(BaseDatabaseHandler):
         """
         await self.collection.delete_one({"_id": document_id})
 
+    @typechecked
     async def get_number_of_documents(self) -> int:
         """
         Get the number of documents in the database

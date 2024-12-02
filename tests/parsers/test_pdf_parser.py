@@ -19,12 +19,9 @@ async def test_advanced_pdf_parser():
     pdf_path = "tests/routes/test.pdf"
     with open(pdf_path, "rb") as file:
         bytesio = BytesIO(file.read())
-        breakpoint()
         text = await pdf_parser.extract_text(bytesio)
-        breakpoint()
         print(text)
         assert len(text) > 1000
         metadata = await pdf_parser.extract_metadata(bytesio)
-        breakpoint()
         print(metadata)
         assert metadata is not None

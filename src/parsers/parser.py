@@ -38,7 +38,7 @@ class AdvancedPDFParser(BaseParser):
     @staticmethod
     async def extract_metadata(file: BytesIO) -> dict:
         doc = fitz.open(stream=file.getvalue(), filetype="pdf")
-        metadata = doc.metadata
+        metadata: dict = doc.metadata
         doc.close()
         return metadata
 

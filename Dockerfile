@@ -5,8 +5,9 @@ RUN mkdir /app
 COPY . /app
 WORKDIR /app
 
-# Install any needed packages specified in requirements.txt
+# Install production and development packages
 RUN pip install --no-cache-dir -r requirements.txt
+RUN if [ -f requirements-dev.txt ]; then pip install --no-cache-dir -r requirements-dev.txt; fi
 
 # Expose the port that the application listens on
 EXPOSE 8000

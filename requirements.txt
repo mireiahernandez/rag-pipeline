@@ -9,3 +9,4 @@ PyPDF2
 PyMuPDF
 flake8
 mypy
+typeguard
