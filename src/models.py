@@ -19,3 +19,8 @@ class Vector(BaseModel):
     vector_embedding: List[float]
     metadata: Metadata
     parent_id: str
+
+
+class DeleteRequest(BaseModel):
+    document_id: str
+    db_name: str

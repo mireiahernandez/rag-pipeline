@@ -19,6 +19,18 @@ async def test_upload_file_real() -> None:
         files = {
             "file": ("new_hr_policy.pdf", file, "application/pdf")
         }
-        response = requests.post("http://0.0.0.0:8000/upload/", files=files)
+        response = requests.post(
+            "http://0.0.0.0:8000/upload/",
+            files=files
+        )
     print(response.json())
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_delete_file_real() -> None:
+    response = requests.delete(
+        "http://0.0.0.0:8000/delete/",
+        json={"document_id": "666666666666666666666666", "db_name": "test"}
+    )
     assert response.status_code == 200

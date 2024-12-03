@@ -91,7 +91,8 @@ class MongoDBHandler(BaseDatabaseHandler):
         """
         await self.doc_collection.delete_one({"_id": document_id})
         # delete all vectors associated with the document
-        await self.vector_collection.delete_many({"parent_id": document_id})
+        await self.vector_collection.delete_many(
+            {"parent_id": str(document_id)})
 
     @typechecked
     async def delete_vector(

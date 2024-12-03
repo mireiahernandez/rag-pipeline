@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import AsyncGenerator
 from fastapi.datastructures import State
@@ -17,6 +16,8 @@ from src.embedders.dense_embedder import CohereDenseEmbedder
 from dotenv import load_dotenv
 import traceback
 from bson import ObjectId
+from src.models import DeleteRequest
+from fastapi import UploadFile
 
 
 load_dotenv()
@@ -80,16 +81,16 @@ async def upload_pdf(file: UploadFile) -> JSONResponse:
 
 # delete endpoint
 @typechecked
-@app.delete("/delete/{document_id}")
-async def delete_document(document_id: str) -> JSONResponse:
+@app.delete("/delete/")
+async def delete_document(request: DeleteRequest) -> JSONResponse:
     try:
         database_handler = MongoDBHandler(
             app.state.mongodb_client,
-            db_name=os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1"),
+            db_name=request.db_name,
             vector_collection_name="vectors",
             doc_collection_name="documents"
         )
-        await database_handler.delete_document(ObjectId(document_id))
+        await database_handler.delete_document(ObjectId(request.document_id))
         return JSONResponse(
             status_code=200,
             content={"message": "Document deleted"})
