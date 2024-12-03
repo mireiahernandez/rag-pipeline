@@ -10,3 +10,4 @@ PyMuPDF
 flake8
 mypy
 typeguard
+cohere>=4.37

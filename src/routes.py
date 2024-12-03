@@ -11,6 +11,13 @@ import uvicorn
 from src.database_handlers.database_handler import MongoDBHandler
 from src.parsers.parser import AdvancedPDFParser
 from typeguard import typechecked
+from src.indexers.pdf_indexer import PDFIndexer
+from src.chunkers.chunker import ApproximateChunkerWithOverlap
+from src.embedders.dense_embedder import CohereDenseEmbedder
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 class AppState(State):
@@ -23,7 +30,8 @@ class AppState(State):
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.info("Connecting to MongoDB")
     app.state.mongodb_client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
-    app.state.database = app.state.mongodb_client["pdfCollection"]
+    app.state.database = app.state.mongodb_client[
+        os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1")]
     yield
     app.state.mongodb_client.close()
 
@@ -42,33 +50,27 @@ async def root() -> dict[str, str]:
 @app.post("/upload/")
 async def upload_pdf(file: UploadFile) -> JSONResponse:
     try:
-        logging.info("Uploading PDF")
-        mongodb_handler = MongoDBHandler(
-            app.state.mongodb_client, "pdfCollection", "pdfs")
-
-        logging.info("Converting to bytes")
-        pdf_parser = AdvancedPDFParser()
-        filebytes = await pdf_parser.convert_to_bytes(file)
-
-        logging.info("Extracting text from filebtyes object of type:"
-                     f"{type(filebytes)}")
-        text = await pdf_parser.extract_text(filebytes)
-
-        logging.info("Uploading to database")
-        document_id = await mongodb_handler.upload_document(
-            text=text, metadata={})
-
-        return JSONResponse(
-            content={
-                "message": "PDF uploaded successfully",
-                "document_id": document_id
-            },
-            status_code=200
+        pdf_indexer = PDFIndexer(
+            parser=AdvancedPDFParser(),
+            chunker=ApproximateChunkerWithOverlap(
+                chunk_size=512,
+                chunk_overlap=128
+            ),
+            embedder=CohereDenseEmbedder(
+                api_key=os.getenv("COHERE_API_KEY", "")
+            ),
+            database_handler=MongoDBHandler(
+                app.state.mongodb_client,
+                db_name=os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1"),
+                vector_collection_name="vectors",
+                doc_collection_name="documents"
+            )
         )
-
+        response: JSONResponse = await pdf_indexer.index_document(file)
+        return response
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error uploading file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

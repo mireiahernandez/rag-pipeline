@@ -5,12 +5,12 @@ services:
     build: .
     depends_on:
       - mongodb  # Ensures FastAPI waits for MongoDB to be ready
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017  # Correct URI for FastAPI to use
     ports:
       - "8000:8000"  # Maps port 5000 on the host to port 5000 in the container
     networks:
       - app-network
+    env_file:
+      - .env
 
   mongodb:
     image: mongo:latest

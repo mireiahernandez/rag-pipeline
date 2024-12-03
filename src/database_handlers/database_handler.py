@@ -1,24 +1,39 @@
 # abstract class for database handler
 from abc import ABC, abstractmethod
-import uuid
-from typing import Optional
 import motor.motor_asyncio
 from typeguard import typechecked  # type: ignore
 from pymongo.results import InsertOneResult
+from src.models import Document, Vector
+from bson import ObjectId
 
 
 class BaseDatabaseHandler(ABC):
     @abstractmethod
     async def upload_document(
         self,
-        metadata: dict,
-        text: str,
-        document_id: Optional[str] = None
-    ) -> str:
+        document: Document
+    ) -> ObjectId:
         pass
 
     @abstractmethod
-    async def delete_document(self, document_id: str) -> None:
+    async def delete_document(
+        self,
+        document_id: ObjectId
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def upload_vector(
+        self,
+        vector: Vector
+    ) -> ObjectId:
+        pass
+
+    @abstractmethod
+    async def delete_vector(
+        self,
+        vector_id: ObjectId
+    ) -> None:
         pass
 
 
@@ -29,45 +44,66 @@ class MongoDBHandler(BaseDatabaseHandler):
         self,
         client: motor.motor_asyncio.AsyncIOMotorClient,
         db_name: str,
-        collection_name: str
+        doc_collection_name: str,
+        vector_collection_name: str
     ):
-        self.client = client
-        self.db = self.client[db_name]
-        self.collection = self.db[collection_name]
+        self.client: motor.motor_asyncio.AsyncIOMotorClient = client
+        self.db: motor.motor_asyncio.AsyncIOMotorDatabase = \
+            self.client[db_name]
+        self.doc_collection: motor.motor_asyncio.AsyncIOMotorCollection = \
+            self.db[doc_collection_name]
+        self.vector_collection: motor.motor_asyncio.AsyncIOMotorCollection = \
+            self.db[vector_collection_name]
 
     @typechecked
     async def upload_document(
         self,
-        metadata: dict,
-        text: str,
-        document_id: Optional[str] = None
-    ) -> str:
+        document: Document,
+    ) -> ObjectId:
         """
         Upload a document to the database
         """
-        document = {
-            "metadata": metadata,
-            "text": text,
-            "_id": document_id if document_id else str(uuid.uuid4())
-        }
-        created_document: InsertOneResult = await self.collection.insert_one(
-            document)
-        inserted_id: str = created_document.inserted_id
+        created_document: InsertOneResult = await self.doc_collection.insert_one( # noqa E501
+            document.model_dump())
+        inserted_id: ObjectId = created_document.inserted_id
+        return inserted_id
+
+    @typechecked
+    async def upload_vector(
+        self,
+        vector: Vector
+    ) -> ObjectId:
+        """
+        Upload a vector embedding to the database
+        """
+        created_vector: InsertOneResult = await self.vector_collection.insert_one( # noqa E501
+            vector.model_dump())
+        inserted_id: ObjectId = created_vector.inserted_id
         return inserted_id
 
     @typechecked
     async def delete_document(
         self,
-        document_id: str
+        document_id: ObjectId
     ) -> None:
         """
         Delete a document from the database
         """
-        await self.collection.delete_one({"_id": document_id})
+        await self.doc_collection.delete_one({"_id": document_id})
+
+    @typechecked
+    async def delete_vector(
+        self,
+        document_id: ObjectId
+    ) -> None:
+        """
+        Delete a document from the database
+        """
+        await self.vector_collection.delete_one({"_id": document_id})
 
     @typechecked
     async def get_number_of_documents(self) -> int:
         """
         Get the number of documents in the database
         """
-        return await self.collection.count_documents({})
+        return await self.doc_collection.count_documents({})
