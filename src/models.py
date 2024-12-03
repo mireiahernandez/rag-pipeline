@@ -17,6 +17,7 @@ class Document(BaseModel):
 
 class Vector(BaseModel):
     vector_embedding: List[float]
+    text: str
     metadata: Metadata
     parent_id: str
 

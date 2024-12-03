@@ -85,6 +85,7 @@ class PDFIndexer(BaseIndexer):
         for i, embedding in enumerate(embeddings):
             vector: Vector = Vector(
                 vector_embedding=embedding,
+                text=chunks[i],
                 metadata=metadata,
                 parent_id=parent_document_id_str
             )

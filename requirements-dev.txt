@@ -5,3 +5,4 @@ typeguard
 pytest
 pytest-asyncio
 requests
+numpy
