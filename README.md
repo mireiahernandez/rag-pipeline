@@ -65,9 +65,23 @@ Within each database, there are two collections: `documents` and `vectors`.
 1. Delete a document through the `/delete` endpoint.
 2. The document is deleted from the `documents` and `vectors` collections of the `tenant1` database.
 
+
 ## Query pipeline
+### Retrieval
 1. Query the app through the `/query` endpoint.
 2. The query is embedded into a vector embedding by the `Embedder` class.
-3. The query vector embedding is used to find the most similar vector embeddings in the `vectors` collection of the `tenant1` database.
-4. The most similar documents are retrieved from the `documents` collection of the `tenant1` database.
-5. The most similar documents are returned to the user.
+3. The query vector embedding is used to find the most similar vector embeddings in the `vectors` collection of the `tenant1` database. This is handled by the `DenseRetriever` class.
+The indices of the top k most similar vectors are retrieved.
+4. The text from the `documents` collection is retrieved using the indices of the top k most similar vectors.
+
+
+### Nearest neighbor search with MongoDB
+The nearest neighbor search is implemented using MongoDB's aggregation framework. This is done by taking the vector embedding and the query embedding and an aggregation pipeline to compute the cosine similarity. An aggregation pipeline is a specific flow of operations that processes, transforms, and returns results. In this case, the pipeline is used to compute the cosine similarity between the vector embedding and the query embedding.
+
+This ensures that the nearest neighbor search is efficient and scalable.
+
+
+
+## Generation pipeline
+1. The query and the retrieved text are passed to the `Generator` class.
+2. The `Generator` class generates a response using the query and the retrieved text.
