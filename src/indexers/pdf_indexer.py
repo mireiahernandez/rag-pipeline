@@ -19,6 +19,9 @@ from typing import List
 from io import BytesIO
 
 
+logging.basicConfig(level=logging.INFO)
+
+
 class BaseIndexer(ABC):
     def __init__(
         self,
@@ -65,7 +68,7 @@ class PDFIndexer(BaseIndexer):
 
         logging.info("2. Chunking text")
         chunks: List[str] = await self.chunker.chunk_text(text, metadata)
-
+        logging.info("3. Embedding chunks: %s", chunks)
         embeddings: List[List[float]] = await self.embedder.embed_batch(
             chunks)
 

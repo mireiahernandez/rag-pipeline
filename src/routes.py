@@ -15,9 +15,13 @@ from src.indexers.pdf_indexer import PDFIndexer
 from src.chunkers.chunker import ApproximateChunkerWithOverlap
 from src.embedders.dense_embedder import CohereDenseEmbedder
 from dotenv import load_dotenv
+import traceback
+from bson import ObjectId
 
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
 
 
 class AppState(State):
@@ -69,6 +73,28 @@ async def upload_pdf(file: UploadFile) -> JSONResponse:
         response: JSONResponse = await pdf_indexer.index_document(file)
         return response
     except Exception as e:
+        # print also the traceback in a pretty format
+        logging.error("An error occurred:\n%s", traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# delete endpoint
+@typechecked
+@app.delete("/delete/{document_id}")
+async def delete_document(document_id: str) -> JSONResponse:
+    try:
+        database_handler = MongoDBHandler(
+            app.state.mongodb_client,
+            db_name=os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1"),
+            vector_collection_name="vectors",
+            doc_collection_name="documents"
+        )
+        await database_handler.delete_document(ObjectId(document_id))
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Document deleted"})
+    except Exception as e:
+        logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
