@@ -6,3 +6,8 @@ motor
 python-dotenv
 pdfminer.six
 PyPDF2
+PyMuPDF
+flake8
+mypy
+typeguard
+cohere>=4.37
