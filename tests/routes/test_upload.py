@@ -1,8 +1,6 @@
 # test service response
 import requests
 import pytest
-from io import BytesIO
-from typing import Dict
 
 
 @pytest.mark.asyncio
