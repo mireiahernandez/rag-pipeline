@@ -25,3 +25,9 @@ class Vector(BaseModel):
 class DeleteRequest(BaseModel):
     document_id: str
     db_name: str
+
+
+class GenerateRequest(BaseModel):
+    query: str
+    k: int = 10  # Number of similar documents to retrieve
+    db_name: str

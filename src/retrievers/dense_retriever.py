@@ -22,6 +22,7 @@ class BaseDenseRetriever(ABC):
 
 
 @typechecked
+@typechecked
 class NNRetriever(BaseDenseRetriever):
     def __init__(self, vector_collection: AsyncIOMotorCollection):
         self.vector_collection = vector_collection

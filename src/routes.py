@@ -18,7 +18,10 @@ import traceback
 from bson import ObjectId
 from src.models import DeleteRequest
 from fastapi import UploadFile
-
+from src.models import GenerateRequest
+from src.retrievers.dense_retriever import NNRetriever
+from src.retrievers.retriever_pipeline import RetrieverPipeline
+from src.agents.agent import RAGAgent
 
 load_dotenv()
 
@@ -35,8 +38,6 @@ class AppState(State):
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logging.info("Connecting to MongoDB")
     app.state.mongodb_client = AsyncIOMotorClient(os.getenv("MONGO_URI"))
-    app.state.database = app.state.mongodb_client[
-        os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1")]
     yield
     app.state.mongodb_client.close()
 
@@ -94,6 +95,41 @@ async def delete_document(request: DeleteRequest) -> JSONResponse:
         return JSONResponse(
             status_code=200,
             content={"message": "Document deleted"})
+    except Exception as e:
+        logging.error("An error occurred:\n%s", traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@typechecked
+@app.post("/generate/")
+async def generate_answer(request: GenerateRequest) -> JSONResponse:
+    try:
+        mongo_handler = MongoDBHandler(
+            client=app.state.mongodb_client,
+            db_name=request.db_name,
+            vector_collection_name="vectors",
+            doc_collection_name="documents"
+        )
+        agent = RAGAgent(
+            retriever_pipeline=RetrieverPipeline(
+                embedder=CohereDenseEmbedder(
+                    api_key=os.getenv("COHERE_API_KEY", "")
+                ),
+                retriever=NNRetriever(
+                    vector_collection=mongo_handler.vector_collection,
+                ),
+
+            ),
+            mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
+            model="mistral-large-latest"
+        )
+        response = await agent.chat(
+            query=request.query,
+        )
+        return JSONResponse(
+            status_code=200,
+            content={"message": response}
+        )
     except Exception as e:
         logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
