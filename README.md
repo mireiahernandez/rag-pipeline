@@ -29,11 +29,28 @@ The output is a Pydantic object with the following fields:
     Example:
     ```python
     import requests
-    with open("tests/routes/test.pdf", "rb") as file:
-        response = requests.post(
-            "http://0.0.0.0:8000/upload/",
-            files={"file": ("test.pdf", file, "application/pdf")},
-            params={"db_name": "tenant1"})
+    pdf_paths = [
+        "examples/pdfs/ACME_Earnings.pdf",
+        "examples/pdfs/hr_manual.pdf"  # Add another PDF for testing
+    ]
+    files = []
+    for pdf_path in pdf_paths:
+        files.append(
+            (
+                "files",
+                (pdf_path.split("/")[-1], open(pdf_path, "rb"), "application/pdf")  # noqa: E501
+            )
+        )
+
+    # Add db_name as a parameter
+    params = {
+        "db_name": "test"  # Using test database for testing
+    }
+    response = requests.post(
+        "http://0.0.0.0:8000/upload/",
+        files=files,
+        params=params
+    )
     ```
 
 2. **Delete endpoint.** This endpoint allows you to delete a document from the app. It will delete the document from the `documents` and `vectors` collections of the `tenant1` database.
@@ -76,7 +93,7 @@ The code is highly modularized and designed to be extended to support more featu
 When adding new features, such as new sparse retrievers, or parsing of new file types, you should also add tests for the new functionality.
 
 To run the tests, first create a Python virtual environment and install the dependencies with `make install`.
-You can run the tests with `make test`.
+You can run the tests with `make test`. Please note that the tests require some data to be uploaded to the test_tenant1 database. You can do this with the `upload_files.py` script in the `examples/` folder. Future work should include automating this process.
 
 ## Design and documentation
 
