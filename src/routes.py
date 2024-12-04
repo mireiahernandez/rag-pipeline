@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import AsyncGenerator
 from fastapi.datastructures import State
@@ -24,6 +23,8 @@ from src.retrievers.dense_retriever import NNRetriever
 from src.retrievers.retriever_pipeline import RetrieverPipeline
 from src.agents.agent import RAGAgent
 from src.retrievers.reranker import Reranker
+from src.models import DeleteResponse
+
 
 load_dotenv()
 
@@ -46,12 +47,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(lifespan=lifespan)
 app.state = AppState()
-
-
-@typechecked
-@app.get("/")
-async def root() -> dict[str, str]:
-    return {"message": "Hello World"}
 
 
 @typechecked
@@ -90,7 +85,7 @@ async def upload_pdf(
 # delete endpoint
 @typechecked
 @app.delete("/delete/")
-async def delete_document(request: DeleteRequest) -> JSONResponse:
+async def delete_document(request: DeleteRequest) -> DeleteResponse:
     try:
         database_handler = MongoDBHandler(
             app.state.mongodb_client,
@@ -99,9 +94,9 @@ async def delete_document(request: DeleteRequest) -> JSONResponse:
             doc_collection_name="documents"
         )
         await database_handler.delete_document(ObjectId(request.document_id))
-        return JSONResponse(
-            status_code=200,
-            content={"message": "Document deleted"})
+        return DeleteResponse(
+            message="Document deleted"
+        )
     except Exception as e:
         logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

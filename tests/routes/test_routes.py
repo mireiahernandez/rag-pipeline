@@ -4,14 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_service_up() -> None:
-    response = requests.get("http://0.0.0.0:8000/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Hello World"}
-
-
-@pytest.mark.asyncio
-async def test_upload_file_real() -> None:
+async def test_upload_endpoint() -> None:
     # load a pdf file
     pdf_path = "tests/routes/test.pdf"
     with open(pdf_path, "rb") as file:
@@ -33,7 +26,7 @@ async def test_upload_file_real() -> None:
 
 
 @pytest.mark.asyncio
-async def test_delete_file_real() -> None:
+async def test_delete_endpoint() -> None:
     response = requests.delete(
         "http://0.0.0.0:8000/delete/",
         json={"document_id": "666666666666666666666666", "db_name": "test"}
@@ -42,7 +35,7 @@ async def test_delete_file_real() -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_answer() -> None:
+async def test_generate_endpoint() -> None:
     response = requests.post(
         "http://0.0.0.0:8000/generate/",
         json={"query": "What is the capital of France?", "db_name": "test"}
