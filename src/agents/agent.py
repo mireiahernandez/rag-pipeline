@@ -199,7 +199,7 @@ class RAGAgent(Agent):
                     tool_call.function.name, **args)
                 text_results = [result.text for result in tool_output]
                 results.extend(text_results)
-                logger.info(f"Tool call results: {tool_output}")
+                logger.info(f"Tool call results: {text_results}")
                 # append the query to the queries list
                 queries.append(
                     Query(
