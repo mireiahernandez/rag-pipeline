@@ -22,7 +22,7 @@ def mongodb_client():
 
 @pytest.fixture
 def mongodb_handler(mongodb_client):
-    db_name = "test_retrieval_db"
+    db_name = "test_tenant1"
     vector_collection_name = "vectors"
     doc_collection_name = "documents"
     return MongoDBHandler(
@@ -82,6 +82,32 @@ async def test_simple_agent(simple_agent):
 
 
 @pytest.mark.asyncio
-async def test_rag_agent(rag_agent):
+async def test_rag_agent_simple_question(rag_agent):
     response = await rag_agent.chat("What is the capital of France?")
     assert "paris" in response.lower()
+
+
+@pytest.mark.asyncio
+async def test_rag_agent_knowledge_question(rag_agent):
+    response = await rag_agent.chat("How much was spent on R&D?")
+    print(response)
+    assert "300" in response
+    assert "million" in response.lower()
+
+
+@pytest.mark.asyncio
+async def test_rag_agent_multiple_part_question(rag_agent):
+    response = await rag_agent.chat(
+        "How much was spent on R&D and what were the technological advancements?"  # noqa: E501
+    )
+    assert "300" in response
+    assert "million" in response.lower()
+
+
+@pytest.mark.asyncio
+async def test_rag_agent_other_pdf_question(rag_agent):
+    response = await rag_agent.chat(
+        "What is the assault leave policy?"  # noqa: E501
+    )
+    print(response)
+    assert "assault leave" in response.lower()

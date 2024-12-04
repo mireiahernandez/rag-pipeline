@@ -23,6 +23,8 @@ def get_knowledge_base_tool() -> Tool:
                             "The rewritten query to search for. "
                             "Ensure this query is optimized for search and "
                             "more effective than the original query."
+                            "Include synonyms and alternative phrasing if "
+                            "necessary."
                         )
                     }
                 },

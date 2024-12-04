@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
 
 class Metadata(BaseModel):
@@ -40,4 +40,3 @@ class UploadResponse(BaseModel):
 
 class GenerateResponse(BaseModel):
     response: str
-    document_ids: Optional[List[str]] = None

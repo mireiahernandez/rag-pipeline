@@ -55,7 +55,10 @@ async def root() -> dict[str, str]:
 
 @typechecked
 @app.post("/upload/")
-async def upload_pdf(file: UploadFile) -> UploadResponse:
+async def upload_pdf(
+    file: UploadFile,
+    db_name: str
+) -> UploadResponse:
     try:
         pdf_indexer = PDFIndexer(
             parser=AdvancedPDFParser(),
@@ -67,8 +70,8 @@ async def upload_pdf(file: UploadFile) -> UploadResponse:
                 api_key=os.getenv("COHERE_API_KEY", "")
             ),
             database_handler=MongoDBHandler(
-                app.state.mongodb_client,
-                db_name=os.getenv("MONGO_DB_TENANT_DB_NAME", "tenant1"),
+                client=app.state.mongodb_client,
+                db_name=db_name,
                 vector_collection_name="vectors",
                 doc_collection_name="documents"
             )
@@ -79,7 +82,6 @@ async def upload_pdf(file: UploadFile) -> UploadResponse:
             document_id=parent_document_id
         )
     except Exception as e:
-        # print also the traceback in a pretty format
         logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -127,7 +129,7 @@ async def generate_answer(request: GenerateRequest) -> GenerateResponse:
             mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             model="mistral-large-latest"
         )
-        response, document_ids = await agent.chat(
+        response = await agent.chat(
             query=request.query,
         )
         return GenerateResponse(

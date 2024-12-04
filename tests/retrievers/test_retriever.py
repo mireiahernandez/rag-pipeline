@@ -23,7 +23,7 @@ def mongodb_client():
 
 @pytest.fixture
 def mongodb_handler(mongodb_client):
-    db_name = "test_retrieval_db"
+    db_name = "test"
     vector_collection_name = "vectors"
     doc_collection_name = "documents"
     return MongoDBHandler(
