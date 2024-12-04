@@ -16,6 +16,7 @@ from src.chunkers.chunker import BaseChunker
 from bson import ObjectId
 from typing import List
 from io import BytesIO
+import uuid
 
 
 logging.basicConfig(level=logging.INFO)
@@ -84,6 +85,7 @@ class PDFIndexer(BaseIndexer):
         for i, embedding in enumerate(embeddings):
             vector: Vector = Vector(
                 vector_embedding=embedding,
+                vector_id=str(uuid.uuid4()),
                 text=chunks[i],
                 metadata=metadata,
                 parent_id=parent_document_id_str

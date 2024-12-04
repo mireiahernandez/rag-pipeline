@@ -17,6 +17,7 @@ class Document(BaseModel):
 
 class Vector(BaseModel):
     vector_embedding: List[float]
+    vector_id: str
     text: str
     metadata: Metadata
     parent_id: str
@@ -38,5 +39,11 @@ class UploadResponse(BaseModel):
     document_id: str
 
 
+class Query(BaseModel):
+    query: str
+    retrieved_ids: List[str]
+
+
 class GenerateResponse(BaseModel):
     response: str
+    queries: List[Query]

@@ -84,15 +84,15 @@ async def test_simple_agent(simple_agent):
 @pytest.mark.asyncio
 async def test_rag_agent_simple_question(rag_agent):
     response = await rag_agent.chat("What is the capital of France?")
-    assert "paris" in response.lower()
+    assert "paris" in response.response.lower()
 
 
 @pytest.mark.asyncio
 async def test_rag_agent_knowledge_question(rag_agent):
     response = await rag_agent.chat("How much was spent on R&D?")
     print(response)
-    assert "300" in response
-    assert "million" in response.lower()
+    assert "300" in response.response.lower()
+    assert "million" in response.response.lower()
 
 
 @pytest.mark.asyncio
@@ -100,8 +100,8 @@ async def test_rag_agent_multiple_part_question(rag_agent):
     response = await rag_agent.chat(
         "How much was spent on R&D and what were the technological advancements?"  # noqa: E501
     )
-    assert "300" in response
-    assert "million" in response.lower()
+    assert "300" in response.response.lower()
+    assert "million" in response.response.lower()
 
 
 @pytest.mark.asyncio
@@ -110,4 +110,4 @@ async def test_rag_agent_other_pdf_question(rag_agent):
         "What is the assault leave policy?"  # noqa: E501
     )
     print(response)
-    assert "assault leave" in response.lower()
+    assert "assault leave" in response.response.lower()

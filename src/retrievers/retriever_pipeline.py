@@ -13,7 +13,7 @@ from src.models import Vector
 class BaseRetrieverPipeline(ABC):
     @abstractmethod
     @typechecked
-    async def retrieve(self, query: str) -> List[str]:
+    async def retrieve(self, query: str) -> List[Vector]:
         pass
 
 
@@ -26,8 +26,7 @@ class RetrieverPipeline(BaseRetrieverPipeline):
         self.embedder = embedder
         self.retriever = retriever
 
-    async def retrieve(self, query: str) -> List[str]:
+    async def retrieve(self, query: str) -> List[Vector]:
         query_embedding: List[float] = await self.embedder.embed_text(query)
         results: List[Vector] = await self.retriever.retrieve(query_embedding)
-        docs: List[str] = [result.text for result in results]
-        return docs
+        return results

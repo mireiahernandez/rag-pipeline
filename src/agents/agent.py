@@ -10,6 +10,7 @@ from src.retrievers.retriever_pipeline import BaseRetrieverPipeline
 from typing import List, Any, Tuple, Union, Optional
 import json
 from src.agents.tools import get_default_tools
+from src.models import Query, GenerateResponse, Vector
 import logging
 
 
@@ -41,7 +42,7 @@ MessageType = Union[AssistantMessage, SystemMessage, ToolMessage, UserMessage]
 @typechecked
 class Agent(ABC):
     @abstractmethod
-    async def chat(self, query: str) -> str:
+    async def chat(self, query: str) -> Union[str, GenerateResponse]:
         pass
 
 
@@ -111,9 +112,9 @@ class RAGAgent(Agent):
             return result
         raise ValueError(f"Unknown tool: {tool_name}")
 
-    async def _query_knowledge_base(self, query: str) -> List[str]:
+    async def _query_knowledge_base(self, query: str) -> List[Vector]:
         logger.info(f"Querying knowledge base with: {query}")
-        docs: List[str] = await self.retriever_pipeline.retrieve(query)
+        docs: List[Vector] = await self.retriever_pipeline.retrieve(query)
         logger.info(f"Retrieved {len(docs)} documents")
         return docs
 
@@ -162,7 +163,7 @@ class RAGAgent(Agent):
             logger.error(f"Error in LLM call: {str(e)}", exc_info=True)
             raise LLMError(f"Error in LLM call: {str(e)}") from e
 
-    async def chat(self, query: str) -> str:
+    async def chat(self, query: str) -> GenerateResponse:
         logger.info(f"Starting chat with query: {query}")
         system_prompt = (
             "You are an intelligent, agentic assistant designed to help the user with their questions. "  # noqa: E501
@@ -175,6 +176,7 @@ class RAGAgent(Agent):
             SystemMessage(content=system_prompt),
             UserMessage(content=query)
         ]
+        queries: List[Query] = []
 
         counter = 0
         while counter < 5:
@@ -186,19 +188,26 @@ class RAGAgent(Agent):
                 logger.info(
                     "No tool calls requested, returning final response"
                 )
-                return response_text
+                break
 
             # Execute all tool calls
             results = []
             for tool_call in tool_calls:
                 logger.info(f"Executing tool call: {tool_call}")
                 args = json.loads(tool_call.function.arguments)
-                result = await self._call_tool(tool_call.function.name, **args)
-                if isinstance(result, list):
-                    results.extend(result)
-                else:
-                    results.append(result)
-                logger.info(f"Tool call results: {results}")
+                tool_output = await self._call_tool(
+                    tool_call.function.name, **args)
+                text_results = [result.text for result in tool_output]
+                results.extend(text_results)
+                logger.info(f"Tool call results: {tool_output}")
+                # append the query to the queries list
+                queries.append(
+                    Query(
+                        query=args["rewritten_query"],
+                        retrieved_ids=[
+                            result.vector_id for result in tool_output]
+                    )
+                )
 
             # Add assistant's response and tool results to messages
             messages.extend([
@@ -213,4 +222,4 @@ class RAGAgent(Agent):
             counter += 1
 
         logger.info("Reached maximum iterations, returning final response")
-        return response_text
+        return GenerateResponse(response=response_text, queries=queries)

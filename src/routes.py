@@ -129,12 +129,10 @@ async def generate_answer(request: GenerateRequest) -> GenerateResponse:
             mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             model="mistral-large-latest"
         )
-        response = await agent.chat(
+        response: GenerateResponse = await agent.chat(
             query=request.query,
         )
-        return GenerateResponse(
-            response=response,
-        )
+        return response
     except Exception as e:
         logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
