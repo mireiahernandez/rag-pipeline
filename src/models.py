@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class Metadata(BaseModel):
@@ -31,3 +31,13 @@ class GenerateRequest(BaseModel):
     query: str
     k: int = 10  # Number of similar documents to retrieve
     db_name: str
+
+
+class UploadResponse(BaseModel):
+    message: str
+    document_id: str
+
+
+class GenerateResponse(BaseModel):
+    response: str
+    document_ids: Optional[List[str]] = None

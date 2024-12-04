@@ -16,9 +16,10 @@ from src.embedders.dense_embedder import CohereDenseEmbedder
 from dotenv import load_dotenv
 import traceback
 from bson import ObjectId
-from src.models import DeleteRequest
+from src.models import (
+    DeleteRequest, UploadResponse, GenerateRequest, GenerateResponse
+)
 from fastapi import UploadFile
-from src.models import GenerateRequest
 from src.retrievers.dense_retriever import NNRetriever
 from src.retrievers.retriever_pipeline import RetrieverPipeline
 from src.agents.agent import RAGAgent
@@ -54,7 +55,7 @@ async def root() -> dict[str, str]:
 
 @typechecked
 @app.post("/upload/")
-async def upload_pdf(file: UploadFile) -> JSONResponse:
+async def upload_pdf(file: UploadFile) -> UploadResponse:
     try:
         pdf_indexer = PDFIndexer(
             parser=AdvancedPDFParser(),
@@ -72,8 +73,11 @@ async def upload_pdf(file: UploadFile) -> JSONResponse:
                 doc_collection_name="documents"
             )
         )
-        response: JSONResponse = await pdf_indexer.index_document(file)
-        return response
+        parent_document_id: str = await pdf_indexer.index_document(file)
+        return UploadResponse(
+            message="PDF uploaded successfully",
+            document_id=parent_document_id
+        )
     except Exception as e:
         # print also the traceback in a pretty format
         logging.error("An error occurred:\n%s", traceback.format_exc())
@@ -102,7 +106,7 @@ async def delete_document(request: DeleteRequest) -> JSONResponse:
 
 @typechecked
 @app.post("/generate/")
-async def generate_answer(request: GenerateRequest) -> JSONResponse:
+async def generate_answer(request: GenerateRequest) -> GenerateResponse:
     try:
         mongo_handler = MongoDBHandler(
             client=app.state.mongodb_client,
@@ -123,12 +127,11 @@ async def generate_answer(request: GenerateRequest) -> JSONResponse:
             mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             model="mistral-large-latest"
         )
-        response = await agent.chat(
+        response, document_ids = await agent.chat(
             query=request.query,
         )
-        return JSONResponse(
-            status_code=200,
-            content={"message": response}
+        return GenerateResponse(
+            response=response,
         )
     except Exception as e:
         logging.error("An error occurred:\n%s", traceback.format_exc())
