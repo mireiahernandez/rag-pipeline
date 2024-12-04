@@ -13,10 +13,10 @@ from src.models import (
     Vector,
 )
 from src.chunkers.chunker import BaseChunker
-from starlette.responses import JSONResponse
 from bson import ObjectId
 from typing import List
 from io import BytesIO
+import uuid
 
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ class BaseIndexer(ABC):
 
     @abstractmethod
     @typechecked
-    async def index_document(self, file: UploadFile) -> JSONResponse:
+    async def index_document(self, file: UploadFile) -> str:
         pass
 
 
@@ -57,7 +57,7 @@ class PDFIndexer(BaseIndexer):
         super().__init__(parser, chunker, embedder, database_handler)
 
     @typechecked
-    async def index_document(self, file: UploadFile) -> JSONResponse:
+    async def index_document(self, file: UploadFile) -> str:
         logging.info("Parsing PDF")
         filebytes: BytesIO = await self.parser.convert_to_bytes(file)
 
@@ -85,15 +85,10 @@ class PDFIndexer(BaseIndexer):
         for i, embedding in enumerate(embeddings):
             vector: Vector = Vector(
                 vector_embedding=embedding,
+                vector_id=str(uuid.uuid4()),
                 text=chunks[i],
                 metadata=metadata,
                 parent_id=parent_document_id_str
             )
             _ = await self.database_handler.upload_vector(vector)
-        return JSONResponse(
-            content={
-                "message": "PDF uploaded successfully",
-                "document_id": parent_document_id_str
-            },
-            status_code=200
-        )
+        return parent_document_id_str

@@ -22,6 +22,7 @@ class BaseDenseRetriever(ABC):
 
 
 @typechecked
+@typechecked
 class NNRetriever(BaseDenseRetriever):
     def __init__(self, vector_collection: AsyncIOMotorCollection):
         self.vector_collection = vector_collection
@@ -41,6 +42,7 @@ class NNRetriever(BaseDenseRetriever):
                 "$project": {
                     "parent_id": 1,
                     "vector_embedding": 1,
+                    "vector_id": 1,
                     "metadata": 1,
                     "text": 1,
                     "cosineSimilarity": {
@@ -75,6 +77,7 @@ class NNRetriever(BaseDenseRetriever):
                 "cosineSimilarity": 1,
                 "_id": 1,
                 "vector_embedding": 1,
+                "vector_id": 1,
                 "text": 1,
                 "metadata": 1
             }}
@@ -85,6 +88,7 @@ class NNRetriever(BaseDenseRetriever):
         async for doc in self.vector_collection.aggregate(pipeline):
             vector = Vector(
                 vector_embedding=doc["vector_embedding"],
+                vector_id=doc["vector_id"],
                 text=doc["text"],
                 metadata=doc["metadata"],
                 parent_id=doc["parent_id"]

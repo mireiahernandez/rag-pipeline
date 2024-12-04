@@ -11,3 +11,4 @@ flake8
 mypy
 typeguard
 cohere>=4.37
+mistralai>=0.0.8

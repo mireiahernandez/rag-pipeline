@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 import numpy as np
 from src.models import Vector, Metadata
+import uuid
 
 
 load_dotenv()
@@ -23,7 +24,7 @@ def mongodb_client():
 
 @pytest.fixture
 def mongodb_handler(mongodb_client):
-    db_name = "test_retrieval_db"
+    db_name = "test"
     vector_collection_name = "vectors"
     doc_collection_name = "documents"
     return MongoDBHandler(
@@ -52,6 +53,7 @@ async def test_nn_retriever(vector_collection, nn_retriever) -> None:
     for i in range(10):
         vector = Vector(
             vector_embedding=np.random.rand(1536).tolist(),
+            vector_id=str(uuid.uuid4()),
             text=f"test {i}",
             metadata=Metadata(
                 title=f"test {i}",
@@ -88,6 +90,7 @@ async def test_cosine_similarity(vector_collection, nn_retriever) -> None:
     for i in range(4):
         vector = Vector(
             vector_embedding=embeddings[i],
+            vector_id=str(uuid.uuid4()),
             text=f"test {i}",
             metadata=Metadata(
                 title=f"test {i}",

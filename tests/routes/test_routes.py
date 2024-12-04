@@ -19,9 +19,14 @@ async def test_upload_file_real() -> None:
         files = {
             "file": ("new_hr_policy.pdf", file, "application/pdf")
         }
+        # Add db_name as a parameter
+        params = {
+            "db_name": "test"  # Using test database for testing
+        }
         response = requests.post(
             "http://0.0.0.0:8000/upload/",
-            files=files
+            files=files,
+            params=params
         )
     print(response.json())
     assert response.status_code == 200
@@ -34,3 +39,14 @@ async def test_delete_file_real() -> None:
         json={"document_id": "666666666666666666666666", "db_name": "test"}
     )
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_generate_answer() -> None:
+    response = requests.post(
+        "http://0.0.0.0:8000/generate/",
+        json={"query": "What is the capital of France?", "db_name": "test"}
+    )
+    assert response.status_code == 200
+    assert "paris" in response.json()["response"].lower()
+    print(response.json())

@@ -51,7 +51,7 @@ class AdvancedPDFParser(BaseParser):
         metadata: Dict[str, Any] = doc.metadata
         metadata_pyd = Metadata(
             created_at=metadata.get("creationDate", ""),
-            keywords=metadata.get("keywords", []) or [],
+            keywords=metadata.get("keywords", "").split(),
             title=metadata.get("title", ""),
             author=metadata.get("author", ""),
             description=metadata.get("subject", "")
