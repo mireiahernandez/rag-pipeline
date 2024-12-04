@@ -4,7 +4,9 @@ import requests
 if __name__ == "__main__":
     # pdf_path = "examples/ACME_earnings/ACME_Earnings.pdf"
     pdf_paths = [
-        "pdfs/Employee Handbook 2013-14.pdf", "pdfs/ACME_Earnings.pdf"]
+        "examples/pdfs/Employee Handbook 2013-14.pdf",
+        "examples/pdfs/ACME_Earnings.pdf"
+    ]
     for pdf_path in pdf_paths:
         with open(pdf_path, "rb") as file:
             files = {
