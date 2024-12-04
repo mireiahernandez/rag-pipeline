@@ -23,6 +23,7 @@ from fastapi import UploadFile
 from src.retrievers.dense_retriever import NNRetriever
 from src.retrievers.retriever_pipeline import RetrieverPipeline
 from src.agents.agent import RAGAgent
+from src.retrievers.reranker import Reranker
 
 load_dotenv()
 
@@ -124,7 +125,9 @@ async def generate_answer(request: GenerateRequest) -> GenerateResponse:
                 retriever=NNRetriever(
                     vector_collection=mongo_handler.vector_collection,
                 ),
-
+                reranker=Reranker(
+                    cohere_api_key=os.getenv("COHERE_API_KEY", "")
+                )
             ),
             mistral_api_key=os.getenv("MISTRAL_API_KEY", ""),
             model="mistral-large-latest"

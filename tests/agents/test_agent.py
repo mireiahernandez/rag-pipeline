@@ -6,6 +6,7 @@ from src.embedders.dense_embedder import CohereDenseEmbedder
 from src.retrievers.dense_retriever import NNRetriever
 from src.retrievers.retriever_pipeline import RetrieverPipeline
 from src.database_handlers.database_handler import MongoDBHandler
+from src.retrievers.reranker import Reranker
 import motor.motor_asyncio
 
 load_dotenv()
@@ -60,10 +61,18 @@ def retriever(vector_collection) -> NNRetriever:
 
 
 @pytest.fixture
-def retriever_pipeline(embedder, retriever):
+def reranker() -> Reranker:
+    return Reranker(
+        cohere_api_key=os.getenv("COHERE_API_KEY")
+    )
+
+
+@pytest.fixture
+def retriever_pipeline(embedder, retriever, reranker):
     return RetrieverPipeline(
         embedder=embedder,
-        retriever=retriever
+        retriever=retriever,
+        reranker=reranker
     )
 
 
