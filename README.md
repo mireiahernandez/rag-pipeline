@@ -20,12 +20,17 @@ The structure of the MongoDB database is explained in the [MongoDB structure](#m
 ### Usage
 The app provides three endpoints:
 
-1. **Upload endpoint.** This endpoint allows you to upload a PDF file to the app. It will automatically index the document and store the chunks in the vector database.
-The input is a Pydantic object with two fields:
+1. **Upload endpoint.**
+
+    This endpoint allows you to upload a PDF file to the app. It will automatically index the document and store the chunks in the vector database.
+
+    The input is a Pydantic object with two fields:
     - `file`: the PDF file to upload.
     - `db_name`: the name of the database to use. Here you can customize your database name, which in production would be the name of the tenant. This allows you to have multiple databases in the same MongoDB instance.
-The output is a Pydantic object with the following fields:
+
+    The output is a Pydantic object with the following fields:
     - `parent_document_id`: the id of the document in the `documents` collection.
+
     Example:
     ```python
     import requests
@@ -53,31 +58,41 @@ The output is a Pydantic object with the following fields:
     )
     ```
 
-2. **Delete endpoint.** This endpoint allows you to delete a document from the app. It will delete the document from the `documents` and `vectors` collections of the `tenant1` database.
-The input is a Pydantic object with two fields:
+2. **Delete endpoint.** 
+
+    This endpoint allows you to delete a document from the app. It will delete the document from the `documents` and `vectors` collections of the `tenant1` database.
+    The input is a Pydantic object with two fields:
     - `document_id`: the id of the document to delete.
     - `db_name`: the name of the database to use.
-You should provide the `document_id` of the document to delete. This is the id of the document in the `documents` collection. The vector embeddings associated with the document are also deleted automatically.
-The output is a Pydantic object with the following fields:
+    You should provide the `document_id` of the document to delete. This is the id of the document in the `documents` collection. The vector embeddings associated with the document are also deleted automatically.
+
+    The output is a Pydantic object with the following fields:
     - `message`: the message of the response.
+
     Example:
     ```python
     import requests
     response = requests.delete(
-        "http://0.0.0.0:8000/delete/",
-        json={"document_id": "1234567890", "db_name": "tenant1"})
-    ```
+            "http://0.0.0.0:8000/delete/",
+            json={"document_id": "1234567890", "db_name": "tenant1"})
+        ```
 
-3. **Generate endpoint.** This endpoint allows you to query the app with a natural language question. It will use the RAG agent to answer the question.
-The input is a Pydantic object with two fields:
+3. **Generate endpoint.**
+
+    This endpoint allows you to query the app with a natural language question. It will use the RAG agent to answer the question.
+
+    The input is a Pydantic object with two fields:
     - `query`: the question to query the app with.
     - `db_name`: the name of the database to use.
-The output is a Pydantic object with the following fields:
+
+
+    The output is a Pydantic object with the following fields:
     - `response`: the answer to the question.
     - `queries`: the queries made to the knowledge base to answer the question. This is also a Pydantic object with the following fields:
         - `query`: the question made to the knowledge base.
         - `retrieved_ids`: the ids of the documents retrieved from the knowledge base.
-        This field is useful to understand how the answer was retrieved, and to provide citations if needed in the frontend.
+            This field is useful to understand how the answer was retrieved, and to provide citations if needed in the frontend.
+    
     Example:
     ```python
     import requests
