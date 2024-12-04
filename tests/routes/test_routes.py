@@ -4,25 +4,57 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_upload_endpoint() -> None:
-    # load a pdf file
-    pdf_path = "examples/pdfs/ACME_Earnings.pdf"
-    with open(pdf_path, "rb") as file:
-        # Create the files dictionary as FastAPI expects
-        files = {
-            "file": ("acme_earnings.pdf", file, "application/pdf")
-        }
-        # Add db_name as a parameter
-        params = {
-            "db_name": "test"  # Using test database for testing
-        }
-        response = requests.post(
-            "http://0.0.0.0:8000/upload/",
-            files=files,
-            params=params
+async def test_upload_endpoint_multiple_files() -> None:
+    # load pdf files
+    pdf_paths = [
+        "examples/pdfs/ACME_Earnings.pdf",
+        "examples/pdfs/hr_manual.pdf"  # Add another PDF for testing
+    ]
+    files = []
+    for pdf_path in pdf_paths:
+        files.append(
+            (
+                "files",
+                (pdf_path.split("/")[-1], open(pdf_path, "rb"), "application/pdf")  # noqa: E501
+            )
         )
+
+    # Add db_name as a parameter
+    params = {
+        "db_name": "test"  # Using test database for testing
+    }
+    response = requests.post(
+        "http://0.0.0.0:8000/upload/",
+        files=files,
+        params=params
+    )
     print(response.json())
     assert response.status_code == 200
+    assert len(response.json()) == len(pdf_paths)
+
+
+@pytest.mark.asyncio
+async def test_upload_endpoint_single_file() -> None:
+    # load pdf files
+    pdf_path = "examples/pdfs/ACME_Earnings.pdf"
+    files = [
+        (
+            "files",
+            (pdf_path.split("/")[-1], open(pdf_path, "rb"), "application/pdf")
+        )
+    ]
+    # Add db_name as a parameter
+    params = {
+        "db_name": "test"  # Using test database for testing
+    }
+    response = requests.post(
+        "http://0.0.0.0:8000/upload/",
+        files=files,
+        params=params
+    )
+    print(response.json())
+    assert response.status_code == 200
+    assert len(response.json()) == 1
 
 
 @pytest.mark.asyncio

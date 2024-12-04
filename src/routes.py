@@ -24,6 +24,8 @@ from src.retrievers.retriever_pipeline import RetrieverPipeline
 from src.agents.agent import RAGAgent
 from src.retrievers.reranker import Reranker
 from src.models import DeleteResponse
+import asyncio
+from typing import List
 
 
 load_dotenv()
@@ -52,31 +54,37 @@ app.state = AppState()
 @typechecked
 @app.post("/upload/")
 async def upload_pdf(
-    file: UploadFile,
+    files: List[UploadFile],
     db_name: str
-) -> UploadResponse:
+) -> List[UploadResponse]:
+    responses = []
     try:
-        pdf_indexer = PDFIndexer(
-            parser=AdvancedPDFParser(),
-            chunker=ApproximateChunkerWithOverlap(
-                chunk_size=512,
-                chunk_overlap=128
-            ),
-            embedder=CohereDenseEmbedder(
-                api_key=os.getenv("COHERE_API_KEY", "")
-            ),
-            database_handler=MongoDBHandler(
-                client=app.state.mongodb_client,
-                db_name=db_name,
-                vector_collection_name="vectors",
-                doc_collection_name="documents"
+        async def process_file(file: UploadFile) -> UploadResponse:
+            pdf_indexer = PDFIndexer(
+                parser=AdvancedPDFParser(),
+                chunker=ApproximateChunkerWithOverlap(
+                    chunk_size=512,
+                    chunk_overlap=128
+                ),
+                embedder=CohereDenseEmbedder(
+                    api_key=os.getenv("COHERE_API_KEY", "")
+                ),
+                database_handler=MongoDBHandler(
+                    client=app.state.mongodb_client,
+                    db_name=db_name,
+                    vector_collection_name="vectors",
+                    doc_collection_name="documents"
+                )
             )
-        )
-        parent_document_id: str = await pdf_indexer.index_document(file)
-        return UploadResponse(
-            message="PDF uploaded successfully",
-            document_id=parent_document_id
-        )
+            parent_document_id: str = await pdf_indexer.index_document(file)
+            return UploadResponse(
+                message="PDF uploaded successfully",
+                document_id=parent_document_id
+            )
+
+        responses = await asyncio.gather(
+            *(process_file(file) for file in files))
+        return responses
     except Exception as e:
         logging.error("An error occurred:\n%s", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
