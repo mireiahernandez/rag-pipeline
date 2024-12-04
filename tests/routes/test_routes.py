@@ -6,11 +6,11 @@ import pytest
 @pytest.mark.asyncio
 async def test_upload_endpoint() -> None:
     # load a pdf file
-    pdf_path = "tests/routes/test.pdf"
+    pdf_path = "examples/pdfs/ACME_Earnings.pdf"
     with open(pdf_path, "rb") as file:
         # Create the files dictionary as FastAPI expects
         files = {
-            "file": ("new_hr_policy.pdf", file, "application/pdf")
+            "file": ("acme_earnings.pdf", file, "application/pdf")
         }
         # Add db_name as a parameter
         params = {

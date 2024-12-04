@@ -13,13 +13,13 @@ def sample_pdf() -> BytesIO:
 
 @pytest.fixture
 def sample_pdf_2() -> BytesIO:
-    with open("tests/routes/ACME_Earnings.pdf", "rb") as file:
+    with open("examples/pdfs/ACME_Earnings.pdf", "rb") as file:
         return BytesIO(file.read())
 
 
 @pytest.fixture
 def sample_pdf_3() -> BytesIO:
-    with open("tests/routes/test.pdf", "rb") as file:
+    with open("examples/pdfs/Employee Handbook 2013-14.pdf", "rb") as file:
         return BytesIO(file.read())
 
 

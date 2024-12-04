@@ -70,6 +70,7 @@ The output is a Pydantic object with the following fields:
     ``` 
 Alternatively, use the FASTAPI UI by going to `http://0.0.0.0:8000/docs` and clicking on `Try it out` under the various endpoints.
 
+I have attached some example PDFs in the `examples/pdfs` folder. You can run the scripts in the `examples/` folder to upload them to the app and test the functionality.
 ### Running tests
 The code is highly modularized and designed to be extended to support more features. To this end, each module of the code is also fully tested using pytest.
 When adding new features, such as new sparse retrievers, or parsing of new file types, you should also add tests for the new functionality.
@@ -80,11 +81,48 @@ You can run the tests with `make test`.
 ## Design and documentation
 
 ### Code Structure
-[TODO]: add code structure diagram
+The code is structured following the SOLID principles. Each module has its own responsibility and is designed to be closed for modification but open for extension.
+The folder structure of the code is the following:
+```
+src/
+├── agents/
+├── chunkers/
+├── database_handlers/
+├── embedders/
+├── indexers/
+├── models/
+├── parsers/
+├── retrievers/
+├── routes.py
+└── models.py
+
+```
+The `routes.py` file contains the API routes of the app.
+The `models.py` file contains the Pydantic models of the app.   
+The rest of the files are the modules of the app.
+
+### Class diagram
+You can automatically generate a class diagram of the app using the following command:
+```bash
+brew install graphviz
+pip install graphviz
+pip install pylint
+cd src/
+pyreverse -o png -p rag-pipeline src .
+```
+This will generate a class diagram and save it in the `diagrams` folder.
+
+![Class diagram](./diagrams/classes_rag-pipeline-agent-only.png)
+
 
 ### Development pipeline
-[TODO]: add explanation of the development pipeline, testing, etc.
-
+The development pipeline is the following:
+1. Add/modify the code in the `src/` folder. The code should respect SOLID principles. It should also include `typeguard` for strong type checking during runtime.
+2. Add tests for the new functionality.
+2. Run `make test` to run the tests and check that the code still works. This will also run quality checks for the code:
+    - Check that the code respects the PEP style guide with `flake8`.
+    - Check that the code respects the PEP type hints with `mypy`.
+3. Run `make up` to run the app locally and test the changes.
 
 ### MongoDB structure
 Within each database, there are two collections: `documents` and `vectors`.
@@ -108,33 +146,72 @@ Within each database, there are two collections: `documents` and `vectors`.
 
 
 ### Indexing pipeline
-[TODO]: add indexing pipeline diagram
+The indexing pipeline is defined in the `PDFIndexer` class. This class uses composition of classes to index a PDF document. The indexing pipeline is the following:
 
-1. Upload a PDF document through the `/upload` endpoint.
+![Indexing pipeline](./diagrams/indexing_pipeline.png)
+
+1. Upload a PDF document through the `/upload` endpoint. You should provide the name of the database to use.
 2. The document is parsed and the metadata is extracted by the `DocumentParser` class.
-3. The document is chunked into smaller chunks with an overlap of 128 words by the `Chunker` class.
+3. The document is chunked into smaller chunks with an overlap of 128 words by the `Chunker` class. The chunks are enhanced with the document metadata following the pattern:
+    ```
+    Title: ...
+    Author: ...
+    Description: ...
+    ...
+    {chunk}
+    ```
 4. Each chunk is embedded into a vector embedding by the `Embedder` class.
-5. The document metadata and the vector embeddings are stored in the `documents` and `vectors` collections of the `tenant1` database.
+5. The document metadata and the vector embeddings are stored in the `documents` and `vectors` collections of the database you provided.
 
 
 ### Retrieval pipeline
-[TODO]: add retrieval pipeline diagram
+The retrieval pipeline is defined in the `RetrieverPipeline` class. This class uses composition of classes to retrieve the most similar chunks to a query. The retrieval pipeline is the following:
 
-### Retrieval
+![Retrieval pipeline](./diagrams/retriever_pipeline.png)
+
 1. Query the app through the `/query` endpoint.
 2. The query is embedded into a vector embedding by the `Embedder` class.
-3. The query vector embedding is used to find the most similar vector embeddings in the `vectors` collection of the `tenant1` database. This is handled by the `DenseRetriever` class.
+3. The query vector embedding is used to find the most similar vector embeddings in the `vectors` collection of the provided database. This is handled by the `NNRetriever` class.
 The indices of the top k most similar vectors are retrieved.
-4. The text from the `documents` collection is retrieved using the indices of the top k most similar vectors.
+4. The chunks are reranked based on their relevance to the query by the `Reranker` class.
 
 
 #### Nearest neighbor search with MongoDB
-The nearest neighbor search is implemented using MongoDB's aggregation framework. This is done by taking the vector embedding and the query embedding and an aggregation pipeline to compute the cosine similarity. An aggregation pipeline is a specific flow of operations that processes, transforms, and returns results. In this case, the pipeline is used to compute the cosine similarity between the vector embedding and the query embedding.
+The nearest neighbor search is implemented using MongoDB's aggregation framework. An aggregation pipeline is a specific flow of operations that processes, transforms, and returns results.
+In this case, the pipeline is used to compute the cosine similarity between the vector embedding and the query embedding, and then sort the results by the cosine similarity to retrieve the top k most similar vectors.
 
-This ensures that the nearest neighbor search is efficient and scalable.
-
+This ensures that the nearest neighbor search is efficient and scalable by using MongoDB's capabilities to perform the search.
 
 
 ### Generation pipeline: Agentic RAG
-[TODO]: add generation pipeline diagram
+The generation pipeline is defined in the `RAGAgent` class. This class uses composition of classes to generate an answer to a query. The generation pipeline is the following:
 
+![Generation pipeline](./diagrams/agentic_rag_pipeline.png)
+
+Main components:
+- **RAG agent:** This is the agent that generates an answer to a query. It is defined in the `RAGAgent` class:
+    -  **Tool calling** It uses Mixtral with tool calling to generate an answer to the query. It has one tool available: the `query_knowledge_base` tool, which is has an argument `rewritten_query`, which is the query to search the knowledge base with. This query is rewritten to be more effective for search using the `rewrite_query` method in the `RAGAgent` class.
+    - **Retriever pipeline** The `query_knowledge_base` tool uses the `RetrieverPipeline` class to retrieve the most similar chunks to the query. This is defined in the `_query_knowledge_base` method in the `RAGAgent` class.
+    - **Flow**. The agent first reads the query of the user and decides whether it should be answered by searching the knowledge base or it can be answered by the LLM directly. To search the knowledge base, it can generate multiple tool calls to the `query_knowledge_base` tool, which are executed and their results are appended to the chat history. After the tools are executed, the outputs are appended to the chat history as `ToolMessage`objects, and the agent is called again with the new chat history to answer the user query. Once no more tools are needed, the agent finishes its execution and returns the final answer to the user query.
+- **Breaking down complex queries** This agentic flow allows the user to combine information from multiple parts of the knowledge base to answer the query. For example, if the user asks "How much was spent on R&D and what were the technological advancements?", the agent will first search for "How much was spent on R&D" and then search for "What were the technological advancements?". Then the search results will be combined to answer the query.
+
+
+## Additional questions not covered in the report
+1. How would you combine it with keyword-based retrieval?
+    Keyword search is typically done by using sparse retrieval methods, which use sparse embeddings computed through algorithms such as TF-IDF.
+    Therefore to support sparse retrieval, several changes would be needed:
+    - During indexing, the sparse embeddings for the chunks should also be computed and stored in the `vectors` collection (under a new field, e.g. `sparse_embedding`). Please note that if more documents are uploaded in the future, the sparse embeddings will need to be recomputed and stored in the `vectors` collection.
+    - Then we should define a new `HybridRetriever`class (base class: `BaseRetriever`) that computes both:
+        - The cosine similarity between the query embedding and the dense vector embeddings.
+        - The cosine similarity between the query embedding and the sparse vector embeddings.
+        - The final similarity score is a weighted sum of the two similarity scores.
+    Unfortunately I didn't have more time to implement this, but it should not be too difficult to implement with the current design.
+
+2. How to speed up search?
+Right now, the search is done through NN search using MongoDB's aggregation framework, which is a O(n) operation.
+To speed up the search, we could make use of Approximate Nearest Neighbor (ANN) search. This is a technique to speed up the search by using a tree-based index to quickly find the nearest neighbors.
+Implementing such indices from scratch is non-trivial, so I would recommend using a library such as Annoy or Faiss.
+
+3. Which AI tools were used in this project?
+I used the Cursor AI IDE as my copilot. It is an amazing tool that I highly recommend to increase the speed of coding.
+Link to cursor: https://www.cursor.com/
