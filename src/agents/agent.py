@@ -170,6 +170,7 @@ class RAGAgent(Agent):
             "Use the `query_knowledge_base` tool to retrieve relevant information. "  # noqa: E501
             "Do not ask clarifying questions to the user, but instead make multiple calls to the knowledge base."  # noqa: E501
             "You can make multiple calls to the knowledge base if the query involves multiple sub-queries or requires complex information."  # noqa: E501
+            "You should not query the knowledge base for simple questions you can answer directly."  # noqa: E501
         )
 
         messages: List[MessageType] = [
