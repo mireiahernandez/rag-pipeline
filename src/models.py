@@ -47,3 +47,7 @@ class Query(BaseModel):
 class GenerateResponse(BaseModel):
     response: str
     queries: List[Query]
+
+
+class DeleteResponse(BaseModel):
+    message: str
